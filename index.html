@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -79,8 +78,7 @@
     <div class="small">🎯 اضغط/ي على الصورة لإضافة مراجعة</div>
   </header>
 
-Dana, [06/11/2025 14:41]
-<main class="wrap">
+  <main class="wrap">
     <!-- زر الإصلاح -->
     <button class="reset-btn" onclick="if(confirm('هل تريد مسح كل التعليقات وإعادة الضبط؟')) { localStorage.removeItem('user_reviews'); location.reload(); }">
       🗑 مسح كل التعليقات وإعادة الضبط
@@ -93,9 +91,8 @@ Dana, [06/11/2025 14:41]
       </div>
       <div class="body">
         <div id="imageArea" class="image-area">
-         <!-- الصورة فقط تمت الاضافة-->
-            <img id="img" src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-
-            4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2078&q=80" alt="صورة الموقع">
+          <!-- الصورة المطلوبة -->
+          <img id="img" src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2078&q=80" alt="صورة المقهى">
         </div>
         <div class="comments" id="comments"></div>
       </div>
@@ -149,7 +146,7 @@ Dana, [06/11/2025 14:41]
   
   function getReviews() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY))  [];
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     } catch {
       return [];
     }
@@ -160,9 +157,7 @@ Dana, [06/11/2025 14:41]
   }
 
   function render(list){
-    // ❌ لا توجد نقاط حمراء على الصورة
-    
-    // Comments فقط - ثغرة XSS رئيسية
+    // Comments فقط
     commentsEl.innerHTML = '';
     
     if(list.length === 0){
@@ -179,7 +174,7 @@ Dana, [06/11/2025 14:41]
         <div class="badge">${i+1}</div>
         <div style="flex:1">
           <div class="meta">
-            ${n.name  'ضيف/ـة'} • تقييم ${'⭐️'.repeat(n.rating||5)} • 
+            ${n.name || 'ضيف/ـة'} • تقييم ${'⭐️'.repeat(n.rating||5)} • 
             ${new Date(n.at||Date.now()).toLocaleString('ar-SA')}
           </div>
           <div>${n.text}</div>
@@ -200,8 +195,7 @@ Dana, [06/11/2025 14:41]
     }, 100);
   }
 
-
-// Click on image to open form
+  // Click on image to open form
   imageArea.addEventListener('click', (e) => {
     const rect = img.getBoundingClientRect();
     const x = (e.clientX - rect.left)/rect.width;
@@ -243,6 +237,16 @@ Dana, [06/11/2025 14:41]
 </script>
 </body>
 </html>
+
+   
+  
+
+      
+   
+
+  
+ 
+
   
    
     
@@ -255,5 +259,6 @@ Dana, [06/11/2025 14:41]
 
 
   
+
 
 
