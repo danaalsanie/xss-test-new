@@ -1,0 +1,180 @@
+xss-site-new
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>عرض ثغرات XSS - تجربة حية</title>
+  <style>
+    *{box-sizing:border-box; margin:0; padding:0}
+    body{ font-family:Arial; background:#1a1a1a; color:white; min-height:100vh; padding:20px; }
+    .container{ max-width:800px; margin:0 auto; }
+    header{ text-align:center; margin-bottom:30px; padding:20px; background:#2d2d2d; border-radius:15px; }
+    h1{ color:#22d3ee; margin-bottom:10px; }
+    .demo-area{ background:#2d2d2d; padding:25px; border-radius:15px; margin-bottom:20px; }
+    .image-container{ 
+        position: relative;
+        height:400px; 
+        border-radius:10px; 
+        overflow:hidden;
+        margin-bottom:20px;
+        cursor:pointer;
+    }
+    .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .image-container:hover img {
+        transform: scale(1.02);
+    }
+    .image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        text-align: center;
+    }
+    .comments{ margin-top:20px; }
+    .comment{ background:#3d3d3d; padding:15px; margin:10px 0; border-radius:10px; border-left:4px solid #22d3ee; }
+    input, textarea{ width:100%; padding:12px; margin:8px 0; background:#1a1a1a; border:1px solid #444; color:white; border-radius:8px; }
+    textarea{ height:100px; resize:vertical; }
+    button{ background:#22d3ee; color:black; padding:12px 25px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; margin:5px; }
+    .reset-btn{ background:#ef4444; color:white; }
+    .payloads{ background:#2d2d2d; padding:20px; border-radius:10px; margin-top:20px; }
+    .payload{ background:#3d3d3d; padding:10px; margin:8px 0; border-radius:5px; font-family:monospace; font-size:14px; border-right:3px solid #22d3ee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔓 عرض حي - ثغرات XSS</h1>
+      <p>نظام تعليقات مستضعف - للتجربة التعليمية</p>
+    </header>
+
+    <div class="demo-area">
+      <div class="image-container" onclick="openForm()">
+        <!-- صورة مقهى حقيقية -->
+        <img src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2078&q=80" alt="مقهى أنيق">
+        <div class="image-overlay">
+          <div>
+            🎯 انقر على الصورة لإضافة تعليق<br>
+            <small>جرب إدخال أكواد XSS في التعليقات</small>
+          </div>
+        </div>
+      </div>
+
+      <button class="reset-btn" onclick="resetSite()">🔄 إعادة ضبط الموقع</button>
+      
+      <div class="comments" id="comments">
+        <!-- التعليقات تظهر هنا -->
+      </div>
+    </div>
+
+    <div class="payloads">
+      <h3>🛠️ أكواد XSS للتجربة:</h3>
+      <div class="payload">&lt;script&gt;alert('نجحت الهجمة!')&lt;/script&gt;</div>
+      <div class="payload">&lt;script&gt;document.body.style.background="red"&lt;/script&gt;</div>
+      <div class="payload">&lt;h1 style="color:gold"&gt;🔓 تم اختراق الموقع&lt;/h1&gt;</div>
+      <div class="payload">&lt;img src="x" onerror="alert('XSS من الصورة')"&gt;</div>
+    </div>
+  </div>
+
+  <dialog id="formDialog" style="background:#2d2d2d; color:white; border-radius:15px; padding:25px; border:1px solid #444; width:90%; max-width:500px;">
+    <form id="commentForm">
+      <h3 style="margin-bottom:15px;">إضافة تعليق جديد</h3>
+      <input type="text" id="name" placeholder="اسمك (اختياري)">
+      <textarea id="comment" placeholder="اكتب تعليقك أو كود XSS هنا..."></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
+        <button type="button" onclick="closeForm()" style="background:#666;">إلغاء</button>
+        <button type="submit">نشر التعليق</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const dialog = document.getElementById('formDialog');
+    const commentsDiv = document.getElementById('comments');
+    const STORAGE_KEY = 'xss_demo_comments';
+
+    // تحميل التعليقات
+    function loadComments() {
+        const comments = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        renderComments(comments);
+    }
+
+    // عرض التعليقات
+    function renderComments(comments) {
+        commentsDiv.innerHTML = '';
+        
+        if(comments.length === 0) {
+            commentsDiv.innerHTML = '<div class="comment">لا توجد تعليقات بعد - كن أول من يضيف تعليق!</div>';
+            return;
+        }
+
+        comments.forEach(comment => {
+            const commentEl = document.createElement('div');
+            commentEl.className = 'comment';
+            commentEl.innerHTML = `
+                <strong>${comment.name || 'مستخدم'}</strong>
+                <div>${comment.text}</div>
+                <small style="color:#888;">${new Date().toLocaleString('ar-SA')}</small>
+            `;
+            commentsDiv.appendChild(commentEl);
+        });
+
+        // تنفيذ أي سكريبت في التعليقات
+        setTimeout(() => {
+            const scripts = commentsDiv.getElementsByTagName('script');
+            for (let script of scripts) {
+                try { eval(script.innerHTML); } catch(e) {}
+            }
+        }, 100);
+    }
+
+    // فتح وإغلاق النموذج
+    function openForm() { dialog.showModal(); }
+    function closeForm() { dialog.close(); }
+
+    // إعادة الضبط
+    function resetSite() {
+        if(confirm('هل تريد مسح كل التعليقات وإعادة ضبط الموقع؟')) {
+            localStorage.removeItem(STORAGE_KEY);
+            loadComments();
+            alert('تم إعادة الضبط! الموقع نظيف وجاهز للتجربة.');
+        }
+    }
+
+    // إرسال التعليق
+    document.getElementById('commentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const comment = document.getElementById('comment').value;
+
+        if(comment.trim()) {
+            const comments = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            comments.push({ name, text: comment });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+            
+            loadComments();
+            closeForm();
+            document.getElementById('commentForm').reset();
+        } else {
+            alert('يرجى إدخال تعليق!');
+        }
+    });
+
+    // التحميل الأولي
+    loadComments();
+  </script>
+</body>
+</html>
