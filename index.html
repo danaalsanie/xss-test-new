@@ -96,52 +96,25 @@
   </dialog>
 
 <script>
-// 🔥 استخدام JSONBin للتخزين المشترك بين جميع الأجهزة
-const BIN_ID = "67b42bb8ad19ca34f8d1972c";
-const API_KEY = "$2a$10$5R1DpN.is1c.9D6Q5b8zO.X7n6Q5b8zO.X7n6Q5b8zO.X7n6Q5b8zO";
-const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+// 🔥 استخدام مفتاح ثابت للجميع
+const STORAGE_KEY = 'cafe_reviews_global_demo';
 
-async function getReviews() {
+function getReviews() {
   try {
-    const response = await fetch(`${API_URL}/latest`, {
-      headers: { 'X-Master-Key': API_KEY }
-    });
-    const data = await response.json();
-    return data.record.reviews || [];
-  } catch (error) {
-    console.log('Error fetching reviews:', error);
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch {
     return [];
   }
 }
 
-async function saveReviews(reviews) {
-  try {
-    await fetch(API_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY
-      },
-      body: JSON.stringify({ reviews })
-    });
-  } catch (error) {
-    console.log('Error saving reviews:', error);
-  }
+function saveReviews(reviews) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
 }
 
-async function resetAllReviews() {
-  try {
-    await fetch(API_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY
-      },
-      body: JSON.stringify({ reviews: [] })
-    });
+function resetAllReviews() {
+  if(confirm('هل تريد مسح كل التعليقات وإعادة الضبط؟')) {
+    localStorage.removeItem(STORAGE_KEY);
     location.reload();
-  } catch (error) {
-    console.log('Error resetting reviews:', error);
   }
 }
 
@@ -208,47 +181,29 @@ document.getElementById('reviewForm').addEventListener('submit', async (e) => {
   
   if(!payload.text){ alert('اكتب/ي المراجعة'); return; }
   
-  const reviews = await getReviews();
+  const reviews = getReviews();
   reviews.push(payload);
-  await saveReviews(reviews);
+  saveReviews(reviews);
   
   document.getElementById('formDialog').close();
   render(reviews);
 });
 
-document.getElementById('reload').addEventListener('click', async () => {
-  const reviews = await getReviews();
+document.getElementById('reload').addEventListener('click', () => {
+  const reviews = getReviews();
   render(reviews);
 });
 
 // التحميل الأولي
-async function init() {
-  const reviews = await getReviews();
+function init() {
+  const reviews = getReviews();
   render(reviews);
 }
 
-// 🔥 لا يوجد تحديث تلقائي - التحكم يدوي بالضغط على الزر
 init();
 </script>
 </body>
 </html>
-  
-
-
-
-
-
-
-   
-
-
-
- 
- 
- 
-   
-
- 
 
 
 
