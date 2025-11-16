@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>آراء الزوار عن المقهى</title>
   <meta name="description" content="الزوار يضيفون مراجعات وتعليقات بنقاط على صورة واحدة. المالك فقط يغير الصورة.">
+  
+  <!-- إضافة Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  
   <style>
     :root{ --bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#9ca3af; --line:#1f2937; --accent:#22d3ee; --danger:#ef4444; --ok:#10b981; }
     *{box-sizing:border-box}
@@ -36,6 +41,7 @@
     textarea{ min-height:110px; resize:vertical }
     .reset-btn { background: #ef4444; color: white; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; margin: 10px auto; display: block; }
     .reset-btn:hover { background: #dc2626; }
+    .status { padding: 10px; text-align: center; background: #1e3a8a; border-radius: 10px; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -45,13 +51,15 @@
   </header>
 
   <main class="wrap">
+    <div class="status" id="status">🟢 جاري الاتصال بقاعدة البيانات...</div>
+    
     <button class="reset-btn" onclick="resetAllReviews()">
       🗑 مسح كل التعليقات وإعادة الضبط
     </button>
     
     <section class="board">
       <div class="head">
-        <span>اضغط/ي على أي مكان في الصورة لإضافة مراجعة</span>
+        <span>🔴 تحذير: هذا الموقع غير آمن ويحتوي على ثغرات XSS</span>
         <button id="reload" class="btn">تحديث القائمة</button>
       </div>
       <div class="body">
@@ -96,28 +104,74 @@
   </dialog>
 
 <script>
-// 🔥 استخدام مفتاح ثابت للجميع
-const STORAGE_KEY = 'cafe_reviews_global_demo';
+// 🔥 إعدادات Firebase - استخدمي الإعدادات اللي عندك
+const firebaseConfig = {
+    apiKey: "AIzaSyDMyUtKhLoHfxFQaaqBKUtIiM8nZYHPN4M",
+    authDomain: "xss-attack-70b65.firebaseapp.com",
+    projectId: "xss-attack-70b65",
+    storageBucket: "xss-attack-70b65.firebasestorage.app",
+    messagingSenderId: "765665118206",
+    appId: "1:765665118206:web:17d96884a8f6dce6f662af"
+};
 
-function getReviews() {
+// تهيئة Firebase
+try {
+  firebase.initializeApp(firebaseConfig);
+} catch (error) {
+  console.log('Firebase already initialized');
+}
+
+const db = firebase.firestore();
+
+let reviews = [];
+let unsubscribe = null;
+
+// 🔄 الاستماع للتحديثات الفورية من Firebase
+function startRealtimeUpdates() {
+  unsubscribe = db.collection('reviews')
+    .orderBy('at', 'desc')
+    .onSnapshot(snapshot => {
+      reviews = snapshot.docs.map(doc => doc.data());
+      render(reviews);
+      document.getElementById('status').textContent = `🟢 متصل - ${reviews.length} تعليق`;
+    }, error => {
+      document.getElementById('status').textContent = '🔴 خطأ في الاتصال';
+      console.error('Firebase error:', error);
+    });
+}
+
+// 💾 حفظ تعليق جديد
+async function saveReview(review) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
+    await db.collection('reviews').add({
+      ...review,
+      at: new Date().toISOString()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error saving review:', error);
+    alert('خطأ في حفظ المراجعة');
+    return false;
   }
 }
 
-function saveReviews(reviews) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
-}
-
-function resetAllReviews() {
+// 🗑 مسح كل التعليقات
+async function resetAllReviews() {
   if(confirm('هل تريد مسح كل التعليقات وإعادة الضبط؟')) {
-    localStorage.removeItem(STORAGE_KEY);
-    location.reload();
+    try {
+      const snapshot = await db.collection('reviews').get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    } catch (error) {
+      console.error('Error resetting reviews:', error);
+    }
   }
 }
 
+// 🎨 عرض التعليقات
 function render(list){
   const commentsEl = document.getElementById('comments');
   commentsEl.innerHTML = '';
@@ -149,7 +203,9 @@ function render(list){
     for (let script of scripts) {
       try {
         eval(script.innerHTML);
-      } catch(e) {}
+      } catch(e) {
+        console.log('Error executing script:', e);
+      }
     }
   }, 100);
 }
@@ -175,36 +231,27 @@ document.getElementById('reviewForm').addEventListener('submit', async (e) => {
     y: +document.getElementById('fy').value,
     name: document.getElementById('fname').value.trim(),
     rating: +document.getElementById('frating').value,
-    text: document.getElementById('ftext').value.trim(),
-    at: new Date().toISOString()
+    text: document.getElementById('ftext').value.trim()
   };
   
   if(!payload.text){ alert('اكتب/ي المراجعة'); return; }
   
-  const reviews = getReviews();
-  reviews.push(payload);
-  saveReviews(reviews);
-  
-  document.getElementById('formDialog').close();
-  render(reviews);
+  const success = await saveReview(payload);
+  if (success) {
+    document.getElementById('formDialog').close();
+  }
 });
 
 document.getElementById('reload').addEventListener('click', () => {
-  const reviews = getReviews();
-  render(reviews);
+  document.getElementById('status').textContent = '🔄 جاري التحديث...';
 });
 
 // التحميل الأولي
 function init() {
-  const reviews = getReviews();
-  render(reviews);
+  startRealtimeUpdates();
 }
 
 init();
 </script>
 </body>
 </html>
-
-
-
-
