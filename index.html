@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+
+   
+  <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
@@ -41,7 +43,6 @@
     textarea{ min-height:110px; resize:vertical }
     .reset-btn { background: #ef4444; color: white; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; margin: 10px auto; display: block; }
     .reset-btn:hover { background: #dc2626; }
-    .status { padding: 10px; text-align: center; background: #1e3a8a; border-radius: 10px; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -51,15 +52,13 @@
   </header>
 
   <main class="wrap">
-    <div class="status" id="status">🟢 جاري الاتصال بقاعدة البيانات...</div>
-    
     <button class="reset-btn" onclick="resetAllReviews()">
       🗑 مسح كل التعليقات وإعادة الضبط
     </button>
     
     <section class="board">
       <div class="head">
-        <span>🔴 تحذير: هذا الموقع غير آمن ويحتوي على ثغرات XSS</span>
+        <span>اضغط/ي على أي مكان في الصورة لإضافة مراجعة</span>
         <button id="reload" class="btn">تحديث القائمة</button>
       </div>
       <div class="body">
@@ -133,9 +132,7 @@ function startRealtimeUpdates() {
     .onSnapshot(snapshot => {
       reviews = snapshot.docs.map(doc => doc.data());
       render(reviews);
-      document.getElementById('status').textContent = `🟢 متصل - ${reviews.length} تعليق`;
     }, error => {
-      document.getElementById('status').textContent = '🔴 خطأ في الاتصال';
       console.error('Firebase error:', error);
     });
 }
@@ -165,6 +162,7 @@ async function resetAllReviews() {
         batch.delete(doc.ref);
       });
       await batch.commit();
+      location.reload();
     } catch (error) {
       console.error('Error resetting reviews:', error);
     }
@@ -243,7 +241,7 @@ document.getElementById('reviewForm').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('reload').addEventListener('click', () => {
-  document.getElementById('status').textContent = '🔄 جاري التحديث...';
+  // التحديث تلقائي
 });
 
 // التحميل الأولي
@@ -255,3 +253,4 @@ init();
 </script>
 </body>
 </html>
+
