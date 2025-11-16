@@ -7,10 +7,8 @@
   <title>آراء الزوار عن المقهى</title>
   <meta name="description" content="الزوار يضيفون مراجعات وتعليقات بنقاط على صورة واحدة. المالك فقط يغير الصورة.">
   <style>
-    :root{
-      --bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#9ca3af; --line:#1f2937;
-      --accent:#22d3ee; --danger:#ef4444; --ok:#10b981;
-    }
+    /* كل الستايلات نفس الكود الأصلي */
+    :root{ --bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#9ca3af; --line:#1f2937; --accent:#22d3ee; --danger:#ef4444; --ok:#10b981; }
     *{box-sizing:border-box}
     body{ margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial; background:linear-gradient(180deg,#0b1220,#0f172a); color:var(--text); min-height:100dvh; }
     header{ position:sticky; top:0; z-index:10; display:flex; gap:12px; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--line); background:#0b1220cc; backdrop-filter:blur(8px); }
@@ -19,25 +17,8 @@
     .board{ border:1px solid var(--line); background:var(--card); border-radius:20px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.35); }
     .head{ padding:12px 14px; border-bottom:1px solid var(--line); color:var(--muted); font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:10px }
     .body{ padding:12px }
-    .image-area{ 
-      position:relative; 
-      background: #0a0f1a;
-      border: 2px dashed #334155;
-      border-radius:14px; 
-      overflow:hidden; 
-      min-height:400px; 
-      display:flex; 
-      align-items:center; 
-      justify-content:center; 
-      user-select:none; 
-      touch-action:manipulation;
-    }
-    .image-area img {
-      max-width: 100%;
-      max-height: 70vh;
-      object-fit: cover;
-      border-radius: 10px;
-    }
+    .image-area{ position:relative; background: #0a0f1a; border: 2px dashed #334155; border-radius:14px; overflow:hidden; min-height:400px; display:flex; align-items:center; justify-content:center; user-select:none; touch-action:manipulation; }
+    .image-area img { max-width: 100%; max-height: 70vh; object-fit: cover; border-radius: 10px; }
     .hint{ color:var(--muted); font-size:13px; padding:10px; text-align:center }
     .comments{ margin-top:14px; display:flex; flex-direction:column; gap:10px }
     .comment{ border:1px solid var(--line); background:#0a0f1a; border-radius:14px; padding:12px; display:flex; align-items:flex-start; gap:10px }
@@ -55,22 +36,8 @@
     label{ font-size:13px; color:var(--muted) }
     input, textarea, select{ width:100%; background:#0a0f1a; border:1px solid #334155; color:var(--text); border-radius:12px; padding:10px 12px; }
     textarea{ min-height:110px; resize:vertical }
-    
-    /* زر الإصلاح */
-    .reset-btn {
-      background: #ef4444;
-      color: white;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 14px;
-      margin: 10px auto;
-      display: block;
-    }
-    .reset-btn:hover {
-      background: #dc2626;
-    }
+    .reset-btn { background: #ef4444; color: white; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; margin: 10px auto; display: block; }
+    .reset-btn:hover { background: #dc2626; }
   </style>
 </head>
 <body>
@@ -80,8 +47,7 @@
   </header>
 
   <main class="wrap">
-    <!-- زر الإصلاح -->
-    <button class="reset-btn" onclick="if(confirm('هل تريد مسح كل التعليقات وإعادة الضبط؟')) { resetAllReviews(); }">
+    <button class="reset-btn" onclick="if(confirm('هل تريد مسح كل التعليقات وإعادة الضبط؟')) { localStorage.removeItem('shared_cafe_reviews'); location.reload(); }">
       🗑 مسح كل التعليقات وإعادة الضبط
     </button>
     
@@ -92,7 +58,6 @@
       </div>
       <div class="body">
         <div id="imageArea" class="image-area">
-          <!-- الصورة المطلوبة -->
           <img id="img" src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2078&q=80" alt="صورة المقهى">
         </div>
         <div class="comments" id="comments"></div>
@@ -142,53 +107,19 @@
   const fx = document.getElementById('fx'); const fy = document.getElementById('fy');
   const reloadBtn = document.getElementById('reload');
 
-  // 🔥 التغيير: استخدام JSONBin بدلاً من localStorage
-  const BIN_ID = "67b42bb8ad19ca34f8d1972c";
-  const API_KEY = "$2a$10$5R1DpN.is1c.9D6Q5b8zO.X7n6Q5b8zO.X7n6Q5b8zO.X7n6Q5b8zO";
-  const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+  // استخدام نفس المفتاح للجميع
+  const STORAGE_KEY = 'shared_cafe_reviews';
   
-  async function getReviews() {
+  function getReviews() {
     try {
-      const response = await fetch(`${API_URL}/latest`, {
-        headers: { 'X-Master-Key': API_KEY }
-      });
-      const data = await response.json();
-      return data.record.reviews || [];
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
       return [];
     }
   }
   
-  async function saveReviews(reviews) {
-    try {
-      await fetch(API_URL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY
-        },
-        body: JSON.stringify({ reviews })
-      });
-    } catch (error) {
-      console.error('Error saving reviews:', error);
-    }
-  }
-
-  async function resetAllReviews() {
-    try {
-      await fetch(API_URL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY
-        },
-        body: JSON.stringify({ reviews: [] })
-      });
-      location.reload();
-    } catch (error) {
-      console.error('Error resetting reviews:', error);
-    }
+  function saveReviews(reviews) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
   }
 
   function render(list){
@@ -203,7 +134,7 @@
       const card = document.createElement('div'); 
       card.className = 'comment';
       
-      // إدخال مباشر بدون أي حماية - للاختراق التعليمي
+      // إدخال مباشر بدون أي حماية
       card.innerHTML = `
         <div class="badge">${i+1}</div>
         <div style="flex:1">
@@ -218,7 +149,7 @@
       commentsEl.appendChild(card);
     });
 
-    // 🔥 تنفيذ أي سكريبت في التعليقات - هذه الثغرة الحقيقية
+    // تنفيذ أي سكريبت في التعليقات
     setTimeout(() => {
       const scripts = commentsEl.getElementsByTagName('script');
       for (let script of scripts) {
@@ -252,42 +183,35 @@
     
     if(!payload.text){ alert('اكتب/ي المراجعة'); return; }
     
-    // 🔥 التغيير: حفظ على السيرفر المشترك
-    const reviews = await getReviews();
+    // حفظ محلي بنفس المفتاح للجميع
+    const reviews = getReviews();
     reviews.push(payload);
-    await saveReviews(reviews);
+    saveReviews(reviews);
     
     dialogEl.close();
     render(reviews);
   });
 
-  reloadBtn.addEventListener('click', async () => {
-    const reviews = await getReviews();
-    render(reviews);
+  reloadBtn.addEventListener('click', () => {
+    render(getReviews());
   });
 
   // التحميل الأولي
-  async function init() {
-    const reviews = await getReviews();
-    render(reviews);
-    
-    // 🔥 الإضافة الوحيدة: تحديث تلقائي كل 3 ثواني
-    setInterval(async () => {
-      const reviews = await getReviews();
-      render(reviews);
-    }, 3000);
-  }
-
-  init();
+  render(getReviews());
 })();
 </script>
 </body>
-</html> 
-    
-
+</html>
+   
   
+   
 
 
+ 
+ 
+ 
+   
 
+ 
 
 
