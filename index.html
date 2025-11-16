@@ -96,7 +96,7 @@
   </dialog>
 
 <script>
-// 🔥 استخدم JSONBin للتخزين السحابي المشترك
+// 🔥 استخدام JSONBin للتخزين المشترك بين جميع الأجهزة
 const BIN_ID = "67b42bb8ad19ca34f8d1972c";
 const API_KEY = "$2a$10$5R1DpN.is1c.9D6Q5b8zO.X7n6Q5b8zO.X7n6Q5b8zO.X7n6Q5b8zO";
 const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
@@ -181,7 +181,7 @@ function render(list){
   }, 100);
 }
 
-// الأحداث
+// أحداث الصفحة
 document.getElementById('imageArea').addEventListener('click', (e) => {
   const img = document.getElementById('img');
   const rect = img.getBoundingClientRect();
@@ -221,33 +221,35 @@ document.getElementById('reload').addEventListener('click', async () => {
   render(reviews);
 });
 
-// التحميل الأولي والتحديث التلقائي
+// التحميل الأولي
 async function init() {
   const reviews = await getReviews();
   render(reviews);
-  
-  // 🔥 تحديث تلقائي كل 3 ثواني
-  setInterval(async () => {
-    const reviews = await getReviews();
-    render(reviews);
-  }, 3000);
 }
 
+// 🔥 لا يوجد تحديث تلقائي - التحكم يدوي بالضغط على الزر
 init();
 </script>
 </body>
 </html>
-   
   
+
+
+
+
+
+
    
 
 
+
  
  
  
    
 
  
+
 
 
 
